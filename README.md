@@ -18,7 +18,8 @@ From the **build** directory, run:
  You can then open your browser to [http://localhost:8000](http://localhost:8000) to verify metrics are being published correctly.
  
  To access the metrcis server from another machine over IP, allow the port on firewall in the metrics server VM 
- `firewall-cmd --zone=public --add-port=8000/tcp --permanen`
+ `firewall-cmd --zone=public --add-port=8000/tcp --permanent`
+ 
  `systemctl restart firewalld`
 
  You can use `docker logs nutanix-exporter-1` to troubleshoot issues in the container.
