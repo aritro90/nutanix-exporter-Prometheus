@@ -376,18 +376,24 @@ class NutanixMetrics:
         if self.vm_metrics:
             print(f"{bcolors.OK}{(datetime.now()).strftime('%Y-%m-%d_%H:%M:%S')} [INFO] Initializing metrics for virtual machines...{bcolors.RESET}")
             vm_details = prism_get_vm(api_server=prism,username=user,secret=pwd,secure=self.prism_secure)
-            for key,value in vm_details[0]['stats'].items():
-                #making sure we are compliant with the data model (https://prometheus.io/docs/concepts/data_model/#metric-names-and-labels)
-                key_string = f"NutanixVms_stats_{key}"
-                key_string = key_string.replace(".","_")
-                key_string = key_string.replace("-","_")
-                setattr(self, key_string, Gauge(key_string, key_string, ['vm']))
-            for key,value in vm_details[0]['usageStats'].items():
-                #making sure we are compliant with the data model (https://prometheus.io/docs/concepts/data_model/#metric-names-and-labels)
-                key_string = f"NutanixVms_usage_stats_{key}"
-                key_string = key_string.replace(".","_")
-                key_string = key_string.replace("-","_")
-                setattr(self, key_string, Gauge(key_string, key_string, ['vm']))
+
+            # we need to loop through all VMs to define attributes, as some attributes are only returned if they are set.  This avoids
+            # a keyError on fetch
+            for entity in vm_details:
+                for key,value in entity['stats'].items():
+                    #making sure we are compliant with the data model (https://prometheus.io/docs/concepts/data_model/#metric-names-and-labels)
+                    key_string = f"NutanixVms_stats_{key}"
+                    key_string = key_string.replace(".","_")
+                    key_string = key_string.replace("-","_")
+                    if not hasattr(self, key_string):
+                        setattr(self, key_string, Gauge(key_string, key_string.strip(), ['vm']))
+                for key,value in entity['usageStats'].items():
+                    #making sure we are compliant with the data model (https://prometheus.io/docs/concepts/data_model/#metric-names-and-labels)
+                    key_string = f"NutanixVms_usage_stats_{key}"
+                    key_string = key_string.replace(".","_")
+                    key_string = key_string.replace("-","_")
+                    if not hasattr(self, key_string):
+                        setattr(self, key_string, Gauge(key_string, key_string, ['vm']))
 
         if self.host_metrics:
             print(f"{bcolors.OK}{(datetime.now()).strftime('%Y-%m-%d_%H:%M:%S')} [INFO] Initializing metrics for Hosts...{bcolors.RESET}")
@@ -459,6 +465,8 @@ class NutanixMetrics:
             vm_details = prism_get_vm(api_server=self.prism,username=self.user,secret=self.pwd,secure=self.prism_secure)
             print(f"{bcolors.OK}{(datetime.now()).strftime('%Y-%m-%d %H:%M:%S')} [INFO] Collecting vm metrics for {bcolors.RESET}")
             for entity in vm_details:
+                print(entity)
+                print("\n")
                 for key, value in entity['stats'].items():
                     #making sure we are compliant with the data model (https://prometheus.io/docs/concepts/data_model/#metric-names-and-labels)
                     key_string = f"NutanixVms_stats_{key}"
